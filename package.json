@@ -1,0 +1,15 @@
+{
+  "name": "rspec-wasm",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Proof of concept for running RSpec tests inside ruby.wasm",
+  "main": "poc.mjs",
+  "scripts": {
+    "test": "node poc.mjs",
+    "postinstall": "node -e \"import('node:fs').then(fs => import('node:child_process').then(cp => { if (!fs.existsSync('vendor/gems')) { ['rspec-core', 'rspec-expectations', 'rspec-support', 'rspec-mocks', 'rspec'].forEach(g => cp.execSync(`gem unpack ${g} --target=vendor/gems`)); } }))\""
+  },
+  "dependencies": {
+    "@ruby/3.3-wasm-wasi": "^2.10.1",
+    "@ruby/wasm-wasi": "^2.10.1"
+  }
+}
