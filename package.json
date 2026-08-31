@@ -16,9 +16,20 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node run.mjs",
+    "test": "node bin/rspec-wasm.js",
     "postinstall": "node -e \"import('node:fs').then(fs => import('node:child_process').then(cp => { if (!fs.existsSync('vendor/gems')) { ['rspec-core', 'rspec-expectations', 'rspec-support', 'rspec-mocks', 'rspec'].forEach(g => cp.execSync(`gem unpack ${g} --target=vendor/gems`)); } }))\""
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dogrun-inc/rspec-wasm.git"
+  },
+  "keywords": ["ruby.wasm", "rspec"],
+  "author": "Dogrun Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dogrun-inc/rspec-wasm/issues"
+  },
+  "homepage": "https://github.com/dogrun-inc/rspec-wasm#readme",
   "dependencies": {
     "@ruby/3.3-wasm-wasi": "^2.10.1",
     "@ruby/wasm-wasi": "^2.10.1"
