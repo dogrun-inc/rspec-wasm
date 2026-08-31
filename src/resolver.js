@@ -1,15 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const WORKSPACE_ROOT = process.cwd();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+export const PACKAGE_ROOT = path.resolve(__dirname, "..");
 
 /**
- * Recursively scans a directory for files matching *_spec.rb
- * @param {string} dir Relative or absolute path to scan
+ * Recursively scans a directory in the user workspace for files matching *_spec.rb
+ * @param {string} dir Relative or absolute path to scan (defaults to 'spec')
  * @returns {string[]} Array of relative spec file paths using forward slashes
  */
 export function findSpecFiles(dir = "spec") {
-  const fullDir = path.isAbsolute(dir) ? dir : path.join(WORKSPACE_ROOT, dir);
+  const workspaceRoot = process.cwd();
+  const fullDir = path.isAbsolute(dir) ? dir : path.join(workspaceRoot, dir);
   if (!fs.existsSync(fullDir)) {
     return [];
   }
@@ -22,7 +26,7 @@ export function findSpecFiles(dir = "spec") {
     if (entry.isDirectory()) {
       results.push(...findSpecFiles(fullPath));
     } else if (entry.isFile() && entry.name.endsWith("_spec.rb")) {
-      const relPath = path.relative(WORKSPACE_ROOT, fullPath).replace(/\\/g, "/");
+      const relPath = path.relative(workspaceRoot, fullPath).replace(/\\/g, "/");
       results.push(relPath);
     }
   }
@@ -36,6 +40,7 @@ export function findSpecFiles(dir = "spec") {
  * @returns {string|null} JSON string containing { file_path, code } or null
  */
 export function resolveRubyModule(moduleName) {
+  const workspaceRoot = process.cwd();
   let cleanName = moduleName.replace(/\\/g, "/");
 
   // Strip leading slash if followed by drive letter (e.g. /C:/path -> C:/path)
@@ -53,26 +58,35 @@ export function resolveRubyModule(moduleName) {
   } else if (cleanName.startsWith("/")) {
     possiblePaths.push(cleanName);
     possiblePaths.push(relativeFile);
-    possiblePaths.push(path.join(WORKSPACE_ROOT, cleanName.slice(1)));
-    possiblePaths.push(path.join(WORKSPACE_ROOT, relativeFile.slice(1)));
+    possiblePaths.push(path.join(workspaceRoot, cleanName.slice(1)));
+    possiblePaths.push(path.join(workspaceRoot, relativeFile.slice(1)));
   }
 
   // 1. Workspace root direct
-  possiblePaths.push(path.join(WORKSPACE_ROOT, relativeFile));
-  possiblePaths.push(path.join(WORKSPACE_ROOT, cleanName));
+  possiblePaths.push(path.join(workspaceRoot, relativeFile));
+  possiblePaths.push(path.join(workspaceRoot, cleanName));
 
-  // 2. lib/ directory (e.g. lib/calculator.rb -> require "calculator")
-  possiblePaths.push(path.join(WORKSPACE_ROOT, "lib", relativeFile));
+  // 2. User lib/ directory (e.g. lib/calculator.rb -> require "calculator")
+  possiblePaths.push(path.join(workspaceRoot, "lib", relativeFile));
 
-  // 3. spec/ directory (e.g. spec/calculator_spec.rb -> require "calculator_spec")
-  possiblePaths.push(path.join(WORKSPACE_ROOT, "spec", relativeFile));
+  // 3. User spec/ directory (e.g. spec/calculator_spec.rb -> require "calculator_spec")
+  possiblePaths.push(path.join(workspaceRoot, "spec", relativeFile));
 
-  // 4. vendor/gems/*/lib/ directory for RSpec gems
-  const gemsDir = path.join(WORKSPACE_ROOT, "vendor", "gems");
-  if (fs.existsSync(gemsDir)) {
-    const gemFolders = fs.readdirSync(gemsDir);
+  // 4. User vendor/gems/*/lib/ directory
+  const userGemsDir = path.join(workspaceRoot, "vendor", "gems");
+  if (fs.existsSync(userGemsDir)) {
+    const gemFolders = fs.readdirSync(userGemsDir);
     for (const folder of gemFolders) {
-      possiblePaths.push(path.join(gemsDir, folder, "lib", relativeFile));
+      possiblePaths.push(path.join(userGemsDir, folder, "lib", relativeFile));
+    }
+  }
+
+  // 5. Package vendor/gems/*/lib/ directory for RSpec gems
+  const packageGemsDir = path.join(PACKAGE_ROOT, "vendor", "gems");
+  if (fs.existsSync(packageGemsDir)) {
+    const gemFolders = fs.readdirSync(packageGemsDir);
+    for (const folder of gemFolders) {
+      possiblePaths.push(path.join(packageGemsDir, folder, "lib", relativeFile));
     }
   }
 

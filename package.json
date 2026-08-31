@@ -1,9 +1,20 @@
 {
   "name": "rspec-wasm",
-  "version": "0.0.2",
+  "version": "0.1.0",
+  "description": "Run native RSpec tests directly on ruby.wasm without embedding Ruby in JavaScript",
+  "main": "./bin/rspec-wasm.js",
+  "bin": {
+    "rspec-wasm": "./bin/rspec-wasm.js"
+  },
   "type": "module",
-  "description": "Proof of concept for running RSpec tests inside ruby.wasm",
-  "main": "run.mjs",
+  "files": [
+    "bin",
+    "src",
+    "vendor",
+    "README.md",
+    "README-ja.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node run.mjs",
     "postinstall": "node -e \"import('node:fs').then(fs => import('node:child_process').then(cp => { if (!fs.existsSync('vendor/gems')) { ['rspec-core', 'rspec-expectations', 'rspec-support', 'rspec-mocks', 'rspec'].forEach(g => cp.execSync(`gem unpack ${g} --target=vendor/gems`)); } }))\""

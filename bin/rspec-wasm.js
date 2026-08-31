@@ -1,6 +1,8 @@
-import { findSpecFiles } from "./src/resolver.js";
-import { createRubyVM } from "./src/vm.js";
-import { runSpecs } from "./src/runner.js";
+#!/usr/bin/env node
+
+import { findSpecFiles } from "../src/resolver.js";
+import { createRubyVM } from "../src/vm.js";
+import { runSpecs } from "../src/runner.js";
 
 async function main() {
   const cliArgs = process.argv.slice(2);
@@ -10,7 +12,7 @@ async function main() {
     // Execute specifically requested spec file(s) from CLI
     specFiles = cliArgs;
   } else {
-    // Auto-discover all *_spec.rb files under spec/
+    // Auto-discover all *_spec.rb files under spec/ in user workspace
     specFiles = findSpecFiles("spec");
   }
 

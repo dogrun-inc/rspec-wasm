@@ -1,9 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DefaultRubyVM } from "@ruby/wasm-wasi/dist/node";
-import { registerResolverBridge } from "./resolver.js";
-
-const WORKSPACE_ROOT = process.cwd();
+import { registerResolverBridge, PACKAGE_ROOT } from "./resolver.js";
 
 /**
  * Initializes Ruby VM with `@ruby/wasm-wasi` and registers CustomRequireHook from src/require_hook.rb
@@ -14,7 +12,7 @@ export async function createRubyVM() {
   registerResolverBridge();
 
   const binaryPath = path.join(
-    WORKSPACE_ROOT,
+    PACKAGE_ROOT,
     "node_modules/@ruby/3.3-wasm-wasi/dist/ruby+stdlib.wasm"
   );
 
@@ -29,7 +27,7 @@ export async function createRubyVM() {
   const { vm } = await DefaultRubyVM(module);
 
   // Load and evaluate CustomRequireHook from src/require_hook.rb
-  const hookPath = path.join(WORKSPACE_ROOT, "src", "require_hook.rb");
+  const hookPath = path.join(PACKAGE_ROOT, "src", "require_hook.rb");
   const hookCode = fs.readFileSync(hookPath, "utf-8");
   vm.eval(hookCode);
 
