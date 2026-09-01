@@ -24,7 +24,14 @@ export function runSpecs(vm, specFiles, options = {}) {
     ENV["HOME"] ||= "/tmp"
     ENV["TERM"] = "xterm-256color"
 
-    ${isSilent ? '$stdout = StringIO.new; $stderr = StringIO.new' : ''}
+    ${isSilent ? `
+    original_stdout = $stdout
+    original_stderr = $stderr
+
+    begin
+      $stdout = StringIO.new
+      $stderr = StringIO.new
+    ` : ''}
 
     # Override ExceptionPresenter#read_failed_line to suppress "Unable to find ... to read failed line"
     # when reading source files from Node.js filesystem inside WASM VM
@@ -42,6 +49,12 @@ export function runSpecs(vm, specFiles, options = {}) {
 
     args = ${JSON.stringify(specArgs)}
     status = RSpec::Core::Runner.run(args)
+    ${isSilent ? `
+    ensure
+      $stdout = original_stdout
+      $stderr = original_stderr
+    end
+    ` : ''}
     status
   `;
 

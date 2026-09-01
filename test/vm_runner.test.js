@@ -12,8 +12,12 @@ test("createRubyVM: initializes WASM VM instance and require hook", async () => 
 
 test("runSpecs: returns 0 exit code for passing specs", async () => {
   const vm = await createRubyVM();
+  const stdoutBefore = vm.eval("$stdout.object_id").toJS();
+  const stderrBefore = vm.eval("$stderr.object_id").toJS();
   const exitCode = runSpecs(vm, ["test/fixtures/success_spec.rb"], { silent: true });
   assert.equal(exitCode, 0);
+  assert.equal(vm.eval("$stdout.object_id").toJS(), stdoutBefore);
+  assert.equal(vm.eval("$stderr.object_id").toJS(), stderrBefore);
 });
 
 test("runSpecs: returns non-zero exit code for failing specs", async () => {
