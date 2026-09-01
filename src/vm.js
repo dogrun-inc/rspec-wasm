@@ -20,11 +20,13 @@ export function resolveRubyWasmBinary(resolve = require.resolve) {
 
 /**
  * Initializes Ruby VM with `@ruby/wasm-wasi` and registers CustomRequireHook from src/require_hook.rb
+ * @param {Object} [options] VM options
+ * @param {boolean} [options.allowOutsideRoots=false] Allow Ruby modules outside the workspace and package roots
  * @returns {Promise<import("@ruby/wasm-wasi").RubyVM>} Initialized Ruby VM instance
  */
-export async function createRubyVM() {
+export async function createRubyVM(options = {}) {
   // Ensure JS bridge is registered for Ruby VM interop
-  registerResolverBridge();
+  registerResolverBridge(options);
 
   const binaryPath = resolveRubyWasmBinary();
 

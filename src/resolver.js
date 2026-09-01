@@ -6,6 +6,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export const PACKAGE_ROOT = path.resolve(__dirname, "..");
 
+function isWithinRoot(filePath, root) {
+  const relativePath = path.relative(root, filePath);
+  return relativePath === "" || (
+    relativePath !== ".." &&
+    !relativePath.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativePath)
+  );
+}
+
 /**
  * Recursively scans a directory in the user workspace for files matching *_spec.rb
  * @param {string} dir Relative or absolute path to scan (defaults to 'spec')
@@ -37,10 +46,13 @@ export function findSpecFiles(dir = "spec") {
 /**
  * Resolves a Ruby module name to source code and file path on Node.js filesystem
  * @param {string} moduleName Feature or module name requested by Ruby VM
+ * @param {Object} [options] Resolution options
+ * @param {boolean} [options.allowOutsideRoots=false] Allow files outside the workspace and package roots
  * @returns {string|null} JSON string containing { file_path, code } or null
  */
-export function resolveRubyModule(moduleName) {
+export function resolveRubyModule(moduleName, options = {}) {
   const workspaceRoot = process.cwd();
+  const allowedRoots = [workspaceRoot, PACKAGE_ROOT].map((root) => fs.realpathSync(root));
   let cleanName = moduleName.replace(/\\/g, "/");
 
   // Strip leading slash if followed by drive letter (e.g. /C:/path -> C:/path)
@@ -92,9 +104,14 @@ export function resolveRubyModule(moduleName) {
 
   for (const filePath of possiblePaths) {
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const realFilePath = fs.realpathSync(filePath);
+      if (!options.allowOutsideRoots && !allowedRoots.some((root) => isWithinRoot(realFilePath, root))) {
+        continue;
+      }
+
       return JSON.stringify({
-        file_path: filePath.replace(/\\/g, "/"),
-        code: fs.readFileSync(filePath, "utf-8"),
+        file_path: realFilePath.replace(/\\/g, "/"),
+        code: fs.readFileSync(realFilePath, "utf-8"),
       });
     }
   }
@@ -104,7 +121,9 @@ export function resolveRubyModule(moduleName) {
 
 /**
  * Registers globalThis.resolveRubyModule for Ruby VM JS interop
+ * @param {Object} [options] Resolution options
+ * @param {boolean} [options.allowOutsideRoots=false] Allow files outside the workspace and package roots
  */
-export function registerResolverBridge() {
-  globalThis.resolveRubyModule = resolveRubyModule;
+export function registerResolverBridge(options = {}) {
+  globalThis.resolveRubyModule = (moduleName) => resolveRubyModule(moduleName, options);
 }

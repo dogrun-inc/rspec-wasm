@@ -6,11 +6,13 @@ import { runSpecs } from "../src/runner.js";
 
 async function main() {
   const cliArgs = process.argv.slice(2);
+  const allowOutsideRoots = cliArgs.includes("--allow-outside-roots");
+  const specArgs = cliArgs.filter((arg) => arg !== "--allow-outside-roots");
   let specFiles;
 
-  if (cliArgs.length > 0) {
+  if (specArgs.length > 0) {
     // Execute specifically requested spec file(s) from CLI
-    specFiles = cliArgs;
+    specFiles = specArgs;
   } else {
     // Auto-discover all *_spec.rb files under spec/ in user workspace
     specFiles = findSpecFiles("spec");
@@ -21,7 +23,7 @@ async function main() {
     process.exit(0);
   }
 
-  const vm = await createRubyVM();
+  const vm = await createRubyVM({ allowOutsideRoots });
   const exitCode = runSpecs(vm, specFiles);
 
   if (exitCode !== 0) {
