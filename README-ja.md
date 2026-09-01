@@ -1,6 +1,6 @@
 # rspec-wasm
 
-> ruby.wasm 上でネイティブな RSpec テストを直接実行し、JavaScript 内の Ruby を埋め込みを不要に。
+> ruby.wasm 上でネイティブな RSpec テストを直接実行し、JavaScript 内への Ruby 埋め込みを不要にします。
 
 [English](README.md) | [日本語](README-ja.md)
 
