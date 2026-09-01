@@ -1,11 +1,15 @@
+**RSpec runner for ruby.wasm**
+
 # rspec-wasm
 
 > Run native RSpec tests directly on ruby.wasm without embedding Ruby in JavaScript.
 
 [English](README.md) | [日本語](README-ja.md)
 
-[![npm version](https://img.shields.io/npm/v/rspec-wasm.svg)](https://www.npmjs.com/package/rspec-wasm)
-[![license](https://img.shields.io/npm/l/rspec-wasm.svg)](LICENSE)
+[![npm](https://img.shields.io/badge/npm-package-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/rspec-wasm)
+[![ruby.wasm](https://img.shields.io/badge/ruby.wasm-WebAssembly-CC342D?logo=ruby&logoColor=white)](https://github.com/ruby/ruby.wasm)
+[![RSpec](https://img.shields.io/badge/RSpec-test_framework-E9573F)](https://rspec.info/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 `rspec-wasm` is a lightweight test runner that executes 100% pure Ruby RSpec tests directly inside the WebAssembly VM ([`ruby.wasm`](https://github.com/ruby/ruby.wasm)).
 

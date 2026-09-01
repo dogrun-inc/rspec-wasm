@@ -1,11 +1,15 @@
+**RSpec runner for ruby.wasm**
+
 # rspec-wasm
 
 > ruby.wasm 上でネイティブな RSpec テストを直接実行し、JavaScript 内への Ruby 埋め込みを不要にします。
 
 [English](README.md) | [日本語](README-ja.md)
 
-[![npm version](https://img.shields.io/npm/v/rspec-wasm.svg)](https://www.npmjs.com/package/rspec-wasm)
-[![license](https://img.shields.io/npm/l/rspec-wasm.svg)](LICENSE)
+[![npm](https://img.shields.io/badge/npm-package-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/rspec-wasm)
+[![ruby.wasm](https://img.shields.io/badge/ruby.wasm-WebAssembly-CC342D?logo=ruby&logoColor=white)](https://github.com/ruby/ruby.wasm)
+[![RSpec](https://img.shields.io/badge/RSpec-test_framework-E9573F)](https://rspec.info/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 `rspec-wasm` は、WebAssembly VM ([`ruby.wasm`](https://github.com/ruby/ruby.wasm)) 内で 100% 純粋な Ruby の RSpec テストを直接実行するための軽量なテストランナーです。
 
