@@ -1,7 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRubyVM } from "../src/vm.js";
+import { createRubyVM, resolveRubyWasmBinary } from "../src/vm.js";
 import { runSpecs } from "../src/runner.js";
+
+test("resolveRubyWasmBinary: provides a helpful error when resolution fails", () => {
+  const resolutionError = new Error("Cannot find module");
+
+  assert.throws(
+    () => resolveRubyWasmBinary(() => { throw resolutionError; }),
+    (error) => {
+      assert.match(error.message, /Ruby WASM binary could not be resolved/);
+      assert.match(error.message, /Please run npm install first/);
+      assert.equal(error.cause, resolutionError);
+      return true;
+    }
+  );
+});
 
 test("createRubyVM: initializes WASM VM instance and require hook", async () => {
   const vm = await createRubyVM();
