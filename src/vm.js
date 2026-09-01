@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { DefaultRubyVM } from "@ruby/wasm-wasi/dist/node";
 import { registerResolverBridge, PACKAGE_ROOT } from "./resolver.js";
+
+const require = createRequire(import.meta.url);
 
 /**
  * Initializes Ruby VM with `@ruby/wasm-wasi` and registers CustomRequireHook from src/require_hook.rb
@@ -11,9 +14,8 @@ export async function createRubyVM() {
   // Ensure JS bridge is registered for Ruby VM interop
   registerResolverBridge();
 
-  const binaryPath = path.join(
-    PACKAGE_ROOT,
-    "node_modules/@ruby/3.3-wasm-wasi/dist/ruby+stdlib.wasm"
+  const binaryPath = require.resolve(
+    "@ruby/3.3-wasm-wasi/dist/ruby+stdlib.wasm"
   );
 
   if (!fs.existsSync(binaryPath)) {
