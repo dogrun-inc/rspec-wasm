@@ -22,6 +22,7 @@ test("createRubyVM: initializes WASM VM instance and require hook", async () => 
   assert.ok(vm);
   const result = vm.eval("1 + 1").toJS();
   assert.equal(result, 2);
+  assert.match(vm.eval("RUBY_VERSION").toJS(), /^4\.0\./);
 });
 
 test("runSpecs: returns 0 exit code for passing specs", async () => {

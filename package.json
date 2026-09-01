@@ -27,7 +27,10 @@
     "type": "git",
     "url": "git+https://github.com/dogrun-inc/rspec-wasm.git"
   },
-  "keywords": ["ruby.wasm", "rspec"],
+  "keywords": [
+    "ruby.wasm",
+    "rspec"
+  ],
   "author": "Dogrun Inc.",
   "license": "MIT",
   "bugs": {
@@ -35,7 +38,7 @@
   },
   "homepage": "https://github.com/dogrun-inc/rspec-wasm#readme",
   "dependencies": {
-    "@ruby/3.3-wasm-wasi": "^2.10.1",
+    "@ruby/4.0-wasm-wasi": "^2.10.1",
     "@ruby/wasm-wasi": "^2.10.1"
   }
 }

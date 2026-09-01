@@ -61,6 +61,27 @@ test("resolveRubyModule: resolves bundled gems outside the package workspace", (
   assert.ok(resolved.file_path.includes("vendor/gems/rspec-core-3.12.2"));
 });
 
+test("resolveRubyModule: resolves gems installed by Bundler", (t) => {
+  const temporaryDirectory = fs.mkdtempSync(path.join(process.cwd(), "bundler-test-"));
+  const gemLibrary = path.join(
+    temporaryDirectory,
+    "vendor/bundle/ruby/4.0.0/gems/example-gem-1.0.0/lib"
+  );
+  fs.mkdirSync(gemLibrary, { recursive: true });
+  fs.writeFileSync(path.join(gemLibrary, "example_gem.rb"), "EXAMPLE_GEM = true\n");
+
+  const previousDirectory = process.cwd();
+  process.chdir(temporaryDirectory);
+  t.after(() => {
+    process.chdir(previousDirectory);
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+  });
+
+  const resolved = JSON.parse(resolveRubyModule("example_gem"));
+  assert.ok(resolved.file_path.includes("vendor/bundle/ruby/4.0.0/gems/example-gem-1.0.0"));
+  assert.equal(resolved.code, "EXAMPLE_GEM = true\n");
+});
+
 test("resolveRubyModule: returns null for unknown module", () => {
   const resStr = resolveRubyModule("unknown_module_xyz_123");
   assert.equal(resStr, null);

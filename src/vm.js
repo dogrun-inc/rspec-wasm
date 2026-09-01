@@ -5,7 +5,7 @@ import { DefaultRubyVM } from "@ruby/wasm-wasi/dist/node";
 import { registerResolverBridge, PACKAGE_ROOT } from "./resolver.js";
 
 const require = createRequire(import.meta.url);
-const RUBY_WASM_BINARY = "@ruby/3.3-wasm-wasi/dist/ruby+stdlib.wasm";
+const RUBY_WASM_BINARY = "@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm";
 
 export function resolveRubyWasmBinary(resolve = require.resolve) {
   try {

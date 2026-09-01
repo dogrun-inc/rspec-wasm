@@ -15,6 +15,18 @@ function isWithinRoot(filePath, root) {
   );
 }
 
+function addGemLibraryPaths(possiblePaths, gemsDirectory, relativeFile) {
+  if (!fs.existsSync(gemsDirectory)) {
+    return;
+  }
+
+  for (const directory of fs.readdirSync(gemsDirectory, { withFileTypes: true })) {
+    if (directory.isDirectory()) {
+      possiblePaths.push(path.join(gemsDirectory, directory.name, "lib", relativeFile));
+    }
+  }
+}
+
 /**
  * Recursively scans a directory in the user workspace for files matching *_spec.rb
  * @param {string} dir Relative or absolute path to scan (defaults to 'spec')
@@ -84,21 +96,21 @@ export function resolveRubyModule(moduleName, options = {}) {
   // 3. User spec/ directory (e.g. spec/calculator_spec.rb -> require "calculator_spec")
   possiblePaths.push(path.join(workspaceRoot, "spec", relativeFile));
 
-  // 4. User vendor/gems/*/lib/ directory
-  const userGemsDir = path.join(workspaceRoot, "vendor", "gems");
-  if (fs.existsSync(userGemsDir)) {
-    const gemFolders = fs.readdirSync(userGemsDir);
-    for (const folder of gemFolders) {
-      possiblePaths.push(path.join(userGemsDir, folder, "lib", relativeFile));
-    }
-  }
-
-  // 5. Package vendor/gems/*/lib/ directory for RSpec gems
+  // 4. Package vendor/gems/*/lib/ directory for the bundled RSpec version
   const packageGemsDir = path.join(PACKAGE_ROOT, "vendor", "gems");
-  if (fs.existsSync(packageGemsDir)) {
-    const gemFolders = fs.readdirSync(packageGemsDir);
-    for (const folder of gemFolders) {
-      possiblePaths.push(path.join(packageGemsDir, folder, "lib", relativeFile));
+  addGemLibraryPaths(possiblePaths, packageGemsDir, relativeFile);
+
+  // 5. Additional gems installed by Bundler under the workspace
+  const bundledRubyDir = path.join(workspaceRoot, "vendor", "bundle", "ruby");
+  if (fs.existsSync(bundledRubyDir)) {
+    for (const rubyDirectory of fs.readdirSync(bundledRubyDir, { withFileTypes: true })) {
+      if (rubyDirectory.isDirectory()) {
+        addGemLibraryPaths(
+          possiblePaths,
+          path.join(bundledRubyDir, rubyDirectory.name, "gems"),
+          relativeFile
+        );
+      }
     }
   }
 
