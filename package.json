@@ -9,18 +9,19 @@
   "type": "module",
   "files": [
     "bin",
-    "scripts",
+    "scripts/verify-bundled-gems.js",
     "src",
-    "vendor",
+    "vendor/gems",
     "README.md",
     "README-ja.md",
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js && npm run test:self",
+    "test": "npm run verify:bundled-gems && node --test test/*.test.js && npm run test:self",
     "test:unit": "node --test test/*.test.js",
     "test:self": "node bin/rspec-wasm.js",
-    "postinstall": "node scripts/postinstall.js"
+    "verify:bundled-gems": "node scripts/verify-bundled-gems.js",
+    "prepack": "npm run verify:bundled-gems"
   },
   "repository": {
     "type": "git",

@@ -1,9 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { findSpecFiles, resolveRubyModule } from "../src/resolver.js";
+
+const resolverUrl = pathToFileURL(path.resolve("src/resolver.js")).href;
 
 test("findSpecFiles: auto-discovers spec files in target directory", () => {
   const specs = findSpecFiles("spec");
@@ -37,6 +41,24 @@ test("resolveRubyModule: resolves vendor rspec gems", () => {
   const res = JSON.parse(resStr);
   assert.ok(res.file_path.includes("rspec-core"));
   assert.ok(res.code.includes("RSpec"));
+});
+
+test("resolveRubyModule: resolves bundled gems outside the package workspace", (t) => {
+  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "rspec-wasm-"));
+  t.after(() => fs.rmSync(temporaryDirectory, { recursive: true, force: true }));
+
+  const output = execFileSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "--eval",
+      `import { resolveRubyModule } from ${JSON.stringify(resolverUrl)}; process.stdout.write(resolveRubyModule("rspec/core") || "");`,
+    ],
+    { cwd: temporaryDirectory, encoding: "utf-8" }
+  );
+
+  const resolved = JSON.parse(output);
+  assert.ok(resolved.file_path.includes("vendor/gems/rspec-core-3.12.2"));
 });
 
 test("resolveRubyModule: returns null for unknown module", () => {
