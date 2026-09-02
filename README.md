@@ -6,12 +6,11 @@
 
 [English](README.md) | [日本語](README-ja.md)
 
-[![npm](https://img.shields.io/badge/npm-package-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/rspec-wasm)
-[![ruby.wasm](https://img.shields.io/badge/ruby.wasm-WebAssembly-CC342D?logo=ruby&logoColor=white)](https://github.com/ruby/ruby.wasm)
-[![RSpec](https://img.shields.io/badge/RSpec-test_framework-E9573F)](https://rspec.info/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-417E38?logo=Node.js&logoColor=white)](https://nodejs.org/)
+[![Ruby 4.0](https://img.shields.io/badge/Ruby-4.0-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
+[![ruby.wasm 2.x](https://img.shields.io/badge/ruby.wasm-2.x-654FF0?logo=webassembly&logoColor=white)](https://github.com/ruby/ruby.wasm)
+[![RSpec 3.12](https://img.shields.io/badge/RSpec-3.12-E9573F)](https://rspec.info/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-`rspec-wasm` is a lightweight test runner that executes 100% pure Ruby RSpec tests directly inside the WebAssembly VM ([`ruby.wasm`](https://github.com/ruby/ruby.wasm)).
 
 ---
 
@@ -29,30 +28,20 @@ Traditionally, running Ruby code in WebAssembly or Node.js required wrapping Rub
 ## Limitations
 
 - **No Support for C-extension Gems**: Gems requiring native C extensions cannot be executed inside WASM. Only pure Ruby code and pure Ruby gems are supported.
+- **Bundler**: Additional pure Ruby gems must be installed into the project-local `vendor/bundle` directory as described below. Gems installed only in the system location are not resolved.
+- **Failure Source Snippets**: RSpec may be unable to display the failing source line because Ruby WASM cannot directly read files from the host filesystem. Assertion details and backtraces are still shown.
 
 ---
 
 ## Installation
+
+> **Prerequisite:** Node.js 18 or later is required.
 
 Install as a development dependency:
 
 ```bash
 npm install --save-dev rspec-wasm
 ```
-
-> **Prerequisite:** Ruby (`gem` command) must be installed on your system.
-
-During `npm install`, a `postinstall` script automatically unpacks required RSpec gem dependencies into `vendor/gems/` using:
-
-```bash
-gem unpack rspec-core --target=vendor/gems
-gem unpack rspec-expectations --target=vendor/gems
-gem unpack rspec-support --target=vendor/gems
-gem unpack rspec-mocks --target=vendor/gems
-gem unpack rspec --target=vendor/gems
-```
-
-*Note: If `postinstall` is skipped or if preparing gems manually, run the commands above in your project root.*
 
 ---
 
@@ -83,6 +72,31 @@ Run a specific spec file:
 ```bash
 npx rspec-wasm spec/calculator_spec.rb
 ```
+
+By default, spec files and Ruby modules can only be loaded from the project workspace and the `rspec-wasm` package. To allow trusted specs to load files outside these roots, opt in explicitly:
+
+```bash
+npx rspec-wasm --allow-outside-roots spec/calculator_spec.rb
+```
+
+This option allows Ruby files anywhere on the host filesystem to be loaded and evaluated. Use it only with trusted specs and dependencies.
+
+### Using Additional Gems with Bundler
+
+Add pure Ruby gems to your `Gemfile`, then install them into the project-local Bundler path:
+
+```bash
+bundle config set --local path vendor/bundle
+bundle config set --local force_ruby_platform true
+bundle install
+bundle clean
+```
+
+Notes:
+* ruby.wasm supports pure Ruby gems only.
+* `rspec-wasm` resolves additional gem libraries from `vendor/bundle/ruby/*/gems/*/lib`; the bundled RSpec version takes precedence over gems with the same require path.
+* Ruby and Bundler are only required to install or update additional gems. Spec execution uses the bundled Ruby 4.0 WASM runtime.
+* Commit `Gemfile` and `Gemfile.lock`. Whether to commit `vendor/bundle` depends on your project's deployment policy.
 
 ---
 
@@ -162,13 +176,28 @@ cd rspec-wasm
 npm install
 ```
 
-### 2. Link CLI Globally
+### 2. Prepare Bundled RSpec Gems
+
+The repository already includes the RSpec sources under `vendor/gems`, so no Ruby installation is needed for normal development. To recreate or update the bundle, install Ruby and run these commands from the repository root after clearing `vendor/gems`:
+
+```bash
+gem unpack rspec --version 3.12.0 --target vendor/gems
+gem unpack rspec-core --version 3.12.2 --target vendor/gems
+gem unpack rspec-expectations --version 3.12.3 --target vendor/gems
+gem unpack rspec-mocks --version 3.12.6 --target vendor/gems
+gem unpack rspec-support --version 3.12.1 --target vendor/gems
+npm run verify:bundled-gems
+```
+
+Commit the updated Gem sources and license files together. Do not use unpinned versions, because the directory names are part of the verified package layout.
+
+### 3. Link CLI Globally
 
 ```bash
 npm link
 ```
 
-### 3. Run Tests
+### 4. Run Tests
 
 ```bash
 npm test
