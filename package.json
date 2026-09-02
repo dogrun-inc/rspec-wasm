@@ -12,6 +12,7 @@
     "scripts/verify-bundled-gems.js",
     "src",
     "vendor/gems",
+    "CHANGELOG.md",
     "README.md",
     "README-ja.md",
     "LICENSE"
