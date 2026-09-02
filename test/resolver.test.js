@@ -35,6 +35,23 @@ test("resolveRubyModule: resolves project ruby files", () => {
   assert.ok(res.code.includes("class Calculator"));
 });
 
+test("resolveRubyModule: treats a leading slash as workspace-relative", (t) => {
+  const temporaryDirectory = fs.mkdtempSync(path.join(process.cwd(), "leading-slash-test-"));
+  const rubyFile = path.join(temporaryDirectory, "workspace_file.rb");
+  fs.writeFileSync(rubyFile, "WORKSPACE_VALUE = true\n");
+
+  const previousDirectory = process.cwd();
+  process.chdir(temporaryDirectory);
+  t.after(() => {
+    process.chdir(previousDirectory);
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+  });
+
+  const resolved = JSON.parse(resolveRubyModule("/workspace_file"));
+  assert.equal(resolved.file_path, rubyFile.replace(/\\/g, "/"));
+  assert.equal(resolved.code, "WORKSPACE_VALUE = true\n");
+});
+
 test("resolveRubyModule: resolves vendor rspec gems", () => {
   const resStr = resolveRubyModule("rspec/core");
   assert.ok(resStr !== null);

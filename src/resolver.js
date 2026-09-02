@@ -75,15 +75,15 @@ export function resolveRubyModule(moduleName, options = {}) {
   const relativeFile = cleanName.endsWith(".rb") ? cleanName : `${cleanName}.rb`;
   const possiblePaths = [];
 
-  // 0. Absolute or drive-letter path
-  if (path.isAbsolute(cleanName) || /^[a-zA-Z]:/.test(cleanName)) {
-    possiblePaths.push(cleanName);
-    possiblePaths.push(relativeFile);
-  } else if (cleanName.startsWith("/")) {
-    possiblePaths.push(cleanName);
-    possiblePaths.push(relativeFile);
+  // 0. Leading-slash paths are workspace-relative first, then absolute
+  if (cleanName.startsWith("/")) {
     possiblePaths.push(path.join(workspaceRoot, cleanName.slice(1)));
     possiblePaths.push(path.join(workspaceRoot, relativeFile.slice(1)));
+    possiblePaths.push(cleanName);
+    possiblePaths.push(relativeFile);
+  } else if (path.isAbsolute(cleanName) || /^[a-zA-Z]:/.test(cleanName)) {
+    possiblePaths.push(cleanName);
+    possiblePaths.push(relativeFile);
   }
 
   // 1. Workspace root direct
