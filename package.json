@@ -40,5 +40,8 @@
   "dependencies": {
     "@ruby/4.0-wasm-wasi": "^2.10.1",
     "@ruby/wasm-wasi": "^2.10.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
