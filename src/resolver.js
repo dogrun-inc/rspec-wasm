@@ -1,15 +1,40 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const WORKSPACE_ROOT = process.cwd();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+export const PACKAGE_ROOT = path.resolve(__dirname, "..");
+
+function isWithinRoot(filePath, root) {
+  const relativePath = path.relative(root, filePath);
+  return relativePath === "" || (
+    relativePath !== ".." &&
+    !relativePath.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativePath)
+  );
+}
+
+function addGemLibraryPaths(possiblePaths, gemsDirectory, relativeFile) {
+  if (!fs.existsSync(gemsDirectory)) {
+    return;
+  }
+
+  for (const directory of fs.readdirSync(gemsDirectory, { withFileTypes: true })) {
+    if (directory.isDirectory()) {
+      possiblePaths.push(path.join(gemsDirectory, directory.name, "lib", relativeFile));
+    }
+  }
+}
 
 /**
- * Recursively scans a directory for files matching *_spec.rb
- * @param {string} dir Relative or absolute path to scan
+ * Recursively scans a directory in the user workspace for files matching *_spec.rb
+ * @param {string} dir Relative or absolute path to scan (defaults to 'spec')
  * @returns {string[]} Array of relative spec file paths using forward slashes
  */
 export function findSpecFiles(dir = "spec") {
-  const fullDir = path.isAbsolute(dir) ? dir : path.join(WORKSPACE_ROOT, dir);
+  const workspaceRoot = process.cwd();
+  const fullDir = path.isAbsolute(dir) ? dir : path.join(workspaceRoot, dir);
   if (!fs.existsSync(fullDir)) {
     return [];
   }
@@ -22,7 +47,7 @@ export function findSpecFiles(dir = "spec") {
     if (entry.isDirectory()) {
       results.push(...findSpecFiles(fullPath));
     } else if (entry.isFile() && entry.name.endsWith("_spec.rb")) {
-      const relPath = path.relative(WORKSPACE_ROOT, fullPath).replace(/\\/g, "/");
+      const relPath = path.relative(workspaceRoot, fullPath).replace(/\\/g, "/");
       results.push(relPath);
     }
   }
@@ -33,9 +58,13 @@ export function findSpecFiles(dir = "spec") {
 /**
  * Resolves a Ruby module name to source code and file path on Node.js filesystem
  * @param {string} moduleName Feature or module name requested by Ruby VM
+ * @param {Object} [options] Resolution options
+ * @param {boolean} [options.allowOutsideRoots=false] Allow files outside the workspace and package roots
  * @returns {string|null} JSON string containing { file_path, code } or null
  */
-export function resolveRubyModule(moduleName) {
+export function resolveRubyModule(moduleName, options = {}) {
+  const workspaceRoot = process.cwd();
+  const allowedRoots = [workspaceRoot, PACKAGE_ROOT].map((root) => fs.realpathSync(root));
   let cleanName = moduleName.replace(/\\/g, "/");
 
   // Strip leading slash if followed by drive letter (e.g. /C:/path -> C:/path)
@@ -46,41 +75,55 @@ export function resolveRubyModule(moduleName) {
   const relativeFile = cleanName.endsWith(".rb") ? cleanName : `${cleanName}.rb`;
   const possiblePaths = [];
 
-  // 0. Absolute or drive-letter path
-  if (path.isAbsolute(cleanName) || /^[a-zA-Z]:/.test(cleanName)) {
+  // 0. Leading-slash paths are workspace-relative first, then absolute
+  if (cleanName.startsWith("/")) {
+    possiblePaths.push(path.join(workspaceRoot, cleanName.slice(1)));
+    possiblePaths.push(path.join(workspaceRoot, relativeFile.slice(1)));
     possiblePaths.push(cleanName);
     possiblePaths.push(relativeFile);
-  } else if (cleanName.startsWith("/")) {
+  } else if (path.isAbsolute(cleanName) || /^[a-zA-Z]:/.test(cleanName)) {
     possiblePaths.push(cleanName);
     possiblePaths.push(relativeFile);
-    possiblePaths.push(path.join(WORKSPACE_ROOT, cleanName.slice(1)));
-    possiblePaths.push(path.join(WORKSPACE_ROOT, relativeFile.slice(1)));
   }
 
   // 1. Workspace root direct
-  possiblePaths.push(path.join(WORKSPACE_ROOT, relativeFile));
-  possiblePaths.push(path.join(WORKSPACE_ROOT, cleanName));
+  possiblePaths.push(path.join(workspaceRoot, relativeFile));
+  possiblePaths.push(path.join(workspaceRoot, cleanName));
 
-  // 2. lib/ directory (e.g. lib/calculator.rb -> require "calculator")
-  possiblePaths.push(path.join(WORKSPACE_ROOT, "lib", relativeFile));
+  // 2. User lib/ directory (e.g. lib/calculator.rb -> require "calculator")
+  possiblePaths.push(path.join(workspaceRoot, "lib", relativeFile));
 
-  // 3. spec/ directory (e.g. spec/calculator_spec.rb -> require "calculator_spec")
-  possiblePaths.push(path.join(WORKSPACE_ROOT, "spec", relativeFile));
+  // 3. User spec/ directory (e.g. spec/calculator_spec.rb -> require "calculator_spec")
+  possiblePaths.push(path.join(workspaceRoot, "spec", relativeFile));
 
-  // 4. vendor/gems/*/lib/ directory for RSpec gems
-  const gemsDir = path.join(WORKSPACE_ROOT, "vendor", "gems");
-  if (fs.existsSync(gemsDir)) {
-    const gemFolders = fs.readdirSync(gemsDir);
-    for (const folder of gemFolders) {
-      possiblePaths.push(path.join(gemsDir, folder, "lib", relativeFile));
+  // 4. Package vendor/gems/*/lib/ directory for the bundled RSpec version
+  const packageGemsDir = path.join(PACKAGE_ROOT, "vendor", "gems");
+  addGemLibraryPaths(possiblePaths, packageGemsDir, relativeFile);
+
+  // 5. Additional gems installed by Bundler under the workspace
+  const bundledRubyDir = path.join(workspaceRoot, "vendor", "bundle", "ruby");
+  if (fs.existsSync(bundledRubyDir)) {
+    for (const rubyDirectory of fs.readdirSync(bundledRubyDir, { withFileTypes: true })) {
+      if (rubyDirectory.isDirectory()) {
+        addGemLibraryPaths(
+          possiblePaths,
+          path.join(bundledRubyDir, rubyDirectory.name, "gems"),
+          relativeFile
+        );
+      }
     }
   }
 
   for (const filePath of possiblePaths) {
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const realFilePath = fs.realpathSync(filePath);
+      if (!options.allowOutsideRoots && !allowedRoots.some((root) => isWithinRoot(realFilePath, root))) {
+        continue;
+      }
+
       return JSON.stringify({
-        file_path: filePath.replace(/\\/g, "/"),
-        code: fs.readFileSync(filePath, "utf-8"),
+        file_path: realFilePath.replace(/\\/g, "/"),
+        code: fs.readFileSync(realFilePath, "utf-8"),
       });
     }
   }
@@ -90,7 +133,9 @@ export function resolveRubyModule(moduleName) {
 
 /**
  * Registers globalThis.resolveRubyModule for Ruby VM JS interop
+ * @param {Object} [options] Resolution options
+ * @param {boolean} [options.allowOutsideRoots=false] Allow files outside the workspace and package roots
  */
-export function registerResolverBridge() {
-  globalThis.resolveRubyModule = resolveRubyModule;
+export function registerResolverBridge(options = {}) {
+  globalThis.resolveRubyModule = (moduleName) => resolveRubyModule(moduleName, options);
 }

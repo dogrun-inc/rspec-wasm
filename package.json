@@ -1,15 +1,47 @@
 {
   "name": "rspec-wasm",
-  "version": "0.0.2",
-  "type": "module",
-  "description": "Proof of concept for running RSpec tests inside ruby.wasm",
-  "main": "run.mjs",
-  "scripts": {
-    "test": "node run.mjs",
-    "postinstall": "node -e \"import('node:fs').then(fs => import('node:child_process').then(cp => { if (!fs.existsSync('vendor/gems')) { ['rspec-core', 'rspec-expectations', 'rspec-support', 'rspec-mocks', 'rspec'].forEach(g => cp.execSync(`gem unpack ${g} --target=vendor/gems`)); } }))\""
+  "version": "0.1.0",
+  "description": "Run native RSpec tests directly on ruby.wasm without embedding Ruby in JavaScript",
+  "main": "./bin/rspec-wasm.js",
+  "bin": {
+    "rspec-wasm": "./bin/rspec-wasm.js"
   },
+  "type": "module",
+  "files": [
+    "bin",
+    "scripts/verify-bundled-gems.js",
+    "src",
+    "vendor/gems",
+    "README.md",
+    "README-ja.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "npm run verify:bundled-gems && node --test test/*.test.js && npm run test:self",
+    "test:unit": "node --test test/*.test.js",
+    "test:self": "node bin/rspec-wasm.js",
+    "verify:bundled-gems": "node scripts/verify-bundled-gems.js",
+    "prepack": "npm run verify:bundled-gems"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dogrun-inc/rspec-wasm.git"
+  },
+  "keywords": [
+    "ruby.wasm",
+    "rspec"
+  ],
+  "author": "Dogrun Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dogrun-inc/rspec-wasm/issues"
+  },
+  "homepage": "https://github.com/dogrun-inc/rspec-wasm#readme",
   "dependencies": {
-    "@ruby/3.3-wasm-wasi": "^2.10.1",
+    "@ruby/4.0-wasm-wasi": "^2.10.1",
     "@ruby/wasm-wasi": "^2.10.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

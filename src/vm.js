@@ -1,22 +1,34 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { DefaultRubyVM } from "@ruby/wasm-wasi/dist/node";
-import { registerResolverBridge } from "./resolver.js";
+import { registerResolverBridge, PACKAGE_ROOT } from "./resolver.js";
 
-const WORKSPACE_ROOT = process.cwd();
+const require = createRequire(import.meta.url);
+const RUBY_WASM_BINARY = "@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm";
+
+export function resolveRubyWasmBinary(resolve = require.resolve) {
+  try {
+    return resolve(RUBY_WASM_BINARY);
+  } catch (cause) {
+    throw new Error(
+      `Ruby WASM binary could not be resolved (${RUBY_WASM_BINARY}). Please run npm install first.`,
+      { cause }
+    );
+  }
+}
 
 /**
  * Initializes Ruby VM with `@ruby/wasm-wasi` and registers CustomRequireHook from src/require_hook.rb
+ * @param {Object} [options] VM options
+ * @param {boolean} [options.allowOutsideRoots=false] Allow Ruby modules outside the workspace and package roots
  * @returns {Promise<import("@ruby/wasm-wasi").RubyVM>} Initialized Ruby VM instance
  */
-export async function createRubyVM() {
+export async function createRubyVM(options = {}) {
   // Ensure JS bridge is registered for Ruby VM interop
-  registerResolverBridge();
+  registerResolverBridge(options);
 
-  const binaryPath = path.join(
-    WORKSPACE_ROOT,
-    "node_modules/@ruby/3.3-wasm-wasi/dist/ruby+stdlib.wasm"
-  );
+  const binaryPath = resolveRubyWasmBinary();
 
   if (!fs.existsSync(binaryPath)) {
     throw new Error(
@@ -29,7 +41,7 @@ export async function createRubyVM() {
   const { vm } = await DefaultRubyVM(module);
 
   // Load and evaluate CustomRequireHook from src/require_hook.rb
-  const hookPath = path.join(WORKSPACE_ROOT, "src", "require_hook.rb");
+  const hookPath = path.join(PACKAGE_ROOT, "src", "require_hook.rb");
   const hookCode = fs.readFileSync(hookPath, "utf-8");
   vm.eval(hookCode);
 
