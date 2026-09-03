@@ -1,6 +1,6 @@
 {
   "name": "rspec-wasm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Run native RSpec tests directly on ruby.wasm without embedding Ruby in JavaScript",
   "main": "./bin/rspec-wasm.js",
   "bin": {
