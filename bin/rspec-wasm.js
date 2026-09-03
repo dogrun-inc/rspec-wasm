@@ -3,19 +3,9 @@
 import { findSpecFiles } from "../src/resolver.js";
 import { createRubyVM } from "../src/vm.js";
 import { runSpecs } from "../src/runner.js";
-import { execSync } from "node:child_process";
+import { configureWindowsConsole } from "../src/windows_console.js";
 
-if (process.platform === "win32") {
-  try {
-    // get current code page, and change to 65001 (UTF-8) only if it's not already set
-    const currentCp = execSync("chcp", { encoding: "utf-8" });
-    if (!currentCp.includes("65001")) {
-      execSync("chcp 65001", { stdio: "ignore" });
-    }
-  } catch (_) {
-    // ignore errors and continue
-  }
-}
+configureWindowsConsole();
 
 async function main() {
   const cliArgs = process.argv.slice(2);
