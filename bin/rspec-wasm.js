@@ -3,6 +3,9 @@
 import { findSpecFiles } from "../src/resolver.js";
 import { createRubyVM } from "../src/vm.js";
 import { runSpecs } from "../src/runner.js";
+import { configureWindowsConsole } from "../src/windows_console.js";
+
+configureWindowsConsole();
 
 async function main() {
   const cliArgs = process.argv.slice(2);
