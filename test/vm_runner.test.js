@@ -29,7 +29,7 @@ test("runSpecs: returns 0 exit code for passing specs", async () => {
   const vm = await createRubyVM();
   const stdoutBefore = vm.eval("$stdout.object_id").toJS();
   const stderrBefore = vm.eval("$stderr.object_id").toJS();
-  const exitCode = runSpecs(vm, ["test/fixtures/success_spec.rb"], { silent: true });
+  const exitCode = await runSpecs(vm, ["test/fixtures/success_spec.rb"], { silent: true });
   assert.equal(exitCode, 0);
   assert.equal(vm.eval("$stdout.object_id").toJS(), stdoutBefore);
   assert.equal(vm.eval("$stderr.object_id").toJS(), stderrBefore);
@@ -37,6 +37,12 @@ test("runSpecs: returns 0 exit code for passing specs", async () => {
 
 test("runSpecs: returns non-zero exit code for failing specs", async () => {
   const vm = await createRubyVM();
-  const exitCode = runSpecs(vm, ["test/fixtures/failure_spec.rb"], { silent: true });
+  const exitCode = await runSpecs(vm, ["test/fixtures/failure_spec.rb"], { silent: true });
   assert.notEqual(exitCode, 0);
+});
+
+test("runSpecs: allows specs to await JavaScript promises", async () => {
+  const vm = await createRubyVM();
+  const exitCode = await runSpecs(vm, ["test/fixtures/async_spec.rb"], { silent: true });
+  assert.equal(exitCode, 0);
 });

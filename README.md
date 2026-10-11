@@ -109,6 +109,19 @@ Create Ruby VM and register require hook
 
 Both hooks receive the same Ruby VM used by RSpec. `workspaceRoot` is the absolute working directory from which `rspec-wasm` was started. `teardown` runs after a passing or failing RSpec run, and also when `setup` throws. If `setup` fails, specs are not started and the command exits with a non-zero status.
 
+JavaScript functions exposed through `globalThis` can be called from Ruby specs. Promise-returning functions can be awaited because RSpec runs through RubyVM's asynchronous evaluation API:
+
+```ruby
+require "js"
+
+RSpec.describe "JavaScript runtime" do
+  it "awaits asynchronous work" do
+    result = JS.global[:runtime].call(:calculate, 21).await
+    expect(result.to_i).to eq(42)
+  end
+end
+```
+
 By default, `rspec-wasm.config.mjs` is preferred over `rspec-wasm.config.js`. ES Modules with a default export are recommended. A `.js` file follows the Node.js module type of its project and may use `module.exports` in a CommonJS project. To select another file, pass a path relative to the workspace root (or an absolute path):
 
 ```bash
