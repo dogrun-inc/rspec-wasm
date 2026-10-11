@@ -81,6 +81,42 @@ npx rspec-wasm --allow-outside-roots spec/calculator_spec.rb
 
 This option allows Ruby files anywhere on the host filesystem to be loaded and evaluated. Use it only with trusted specs and dependencies.
 
+### JavaScript Setup and Teardown
+
+To initialize a JavaScript runtime before RSpec loads the spec files, create `rspec-wasm.config.mjs` in the workspace root:
+
+```js
+export default {
+  async setup({ vm, workspaceRoot }) {
+    const runtime = await initializeRuntime(workspaceRoot);
+    connectRuntime(vm, runtime);
+  },
+
+  async teardown({ vm, workspaceRoot }) {
+    await disposeRuntime(vm, workspaceRoot);
+  },
+};
+```
+
+The execution order is:
+
+```text
+Create Ruby VM and register require hook
+  -> await setup({ vm, workspaceRoot })
+  -> load and run RSpec specs
+  -> await teardown({ vm, workspaceRoot })
+```
+
+Both hooks receive the same Ruby VM used by RSpec. `workspaceRoot` is the absolute working directory from which `rspec-wasm` was started. `teardown` runs after a passing or failing RSpec run, and also when `setup` throws. If `setup` fails, specs are not started and the command exits with a non-zero status.
+
+By default, `rspec-wasm.config.mjs` is preferred over `rspec-wasm.config.js`. ES Modules with a default export are recommended. A `.js` file follows the Node.js module type of its project and may use `module.exports` in a CommonJS project. To select another file, pass a path relative to the workspace root (or an absolute path):
+
+```bash
+npx rspec-wasm --config config/rspec-wasm.mjs spec/example_spec.rb
+```
+
+Configuration files execute arbitrary JavaScript in the Node.js process. Only use trusted configuration and dependencies.
+
 ### Using Additional Gems with Bundler
 
 Add pure Ruby gems to your `Gemfile`, then install them into the project-local Bundler path:
