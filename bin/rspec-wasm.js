@@ -3,14 +3,16 @@
 import { findSpecFiles } from "../src/resolver.js";
 import { createRubyVM } from "../src/vm.js";
 import { runSpecs } from "../src/runner.js";
+import { loadConfig, parseCliArguments, runWithConfig } from "../src/config.js";
 import { configureWindowsConsole } from "../src/windows_console.js";
 
 configureWindowsConsole();
 
 async function main() {
-  const cliArgs = process.argv.slice(2);
-  const allowOutsideRoots = cliArgs.includes("--allow-outside-roots");
-  const specArgs = cliArgs.filter((arg) => arg !== "--allow-outside-roots");
+  const workspaceRoot = process.cwd();
+  const { allowOutsideRoots, configPath, specFiles: specArgs } = parseCliArguments(
+    process.argv.slice(2)
+  );
   let specFiles;
 
   if (specArgs.length > 0) {
@@ -26,11 +28,16 @@ async function main() {
     process.exit(0);
   }
 
+  const config = await loadConfig({ workspaceRoot, configPath });
   const vm = await createRubyVM({ allowOutsideRoots });
-  const exitCode = runSpecs(vm, specFiles);
+  const exitCode = await runWithConfig(
+    config,
+    { vm, workspaceRoot },
+    () => runSpecs(vm, specFiles)
+  );
 
   if (exitCode !== 0) {
-    process.exit(exitCode);
+    process.exitCode = exitCode;
   }
 }
 
