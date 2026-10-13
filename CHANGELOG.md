@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added optional `rspec-wasm.config.mjs` and `rspec-wasm.config.js` configuration files with asynchronous `setup` and `teardown` hooks around RSpec execution.
+- Added `--config` for selecting a configuration file relative to the workspace root.
+- Passed the initialized Ruby VM and workspace root to lifecycle hooks, with guaranteed teardown after setup begins and non-zero exit handling for setup failures.
+- Ran RSpec through `RubyVM#evalAsync` so Ruby specs can await Promise-returning JavaScript APIs.
+
 ## [0.1.1] - 2026-09-04
 
 ### Fixed
