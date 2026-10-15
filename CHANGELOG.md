@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-15
+
+### Changed
+
+- Updated the bundled RSpec components to `rspec` 3.13.2, `rspec-core` 3.13.6, `rspec-expectations` 3.13.5, `rspec-mocks` 3.13.8, and `rspec-support` 3.13.7.
+
 ### Added
 
 - Added optional `rspec-wasm.config.mjs` and `rspec-wasm.config.js` configuration files with asynchronous `setup` and `teardown` hooks around RSpec execution.
@@ -43,5 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit, integration, and CLI end-to-end coverage for successful and failing specs, module resolution, Bundler gems, VM initialization, security restrictions, and stream restoration.
 - English and Japanese documentation covering installation, usage, limitations, additional gems, security options, examples, and local development.
 
+[Unreleased]: https://github.com/dogrun-inc/rspec-wasm/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/dogrun-inc/rspec-wasm/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/dogrun-inc/rspec-wasm/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/dogrun-inc/rspec-wasm/releases/tag/v0.1.0
