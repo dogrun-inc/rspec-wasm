@@ -4,9 +4,9 @@
  * @param {string[]} specFiles List of spec file paths to run
  * @param {Object} [options] Execution options
  * @param {boolean} [options.silent=false] Whether to suppress output during execution
- * @returns {number} RSpec exit code (0 for success, non-zero for failure)
+ * @returns {Promise<number>} RSpec exit code (0 for success, non-zero for failure)
  */
-export function runSpecs(vm, specFiles, options = {}) {
+export async function runSpecs(vm, specFiles, options = {}) {
   if (!specFiles || specFiles.length === 0) {
     if (!options.silent) {
       console.log("No spec files found to run.");
@@ -44,6 +44,6 @@ export function runSpecs(vm, specFiles, options = {}) {
     status
   `;
 
-  const exitCodeResult = vm.eval(rubyRunCode);
+  const exitCodeResult = await vm.evalAsync(rubyRunCode);
   return exitCodeResult.toJS();
 }

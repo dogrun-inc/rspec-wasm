@@ -9,7 +9,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-417E38?logo=Node.js&logoColor=white)](https://nodejs.org/ja)
 [![Ruby 4.0](https://img.shields.io/badge/Ruby-4.0-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/ja/)
 [![ruby.wasm 2.x](https://img.shields.io/badge/ruby.wasm-2.x-654FF0?logo=webassembly&logoColor=white)](https://github.com/ruby/ruby.wasm)
-[![RSpec 3.12](https://img.shields.io/badge/RSpec-3.12-E9573F)](https://rspec.info/)
+[![RSpec 3.13](https://img.shields.io/badge/RSpec-3.13-E9573F)](https://rspec.info/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -80,6 +80,55 @@ npx rspec-wasm --allow-outside-roots spec/calculator_spec.rb
 ```
 
 このオプションを指定すると、ホストファイルシステム上の任意の Ruby ファイルを読み込んで評価できます。信頼できる spec と依存関係にのみ使用してください。
+
+### JavaScript によるセットアップと終了処理
+
+RSpec が spec ファイルを読み込む前に JavaScript ランタイムを初期化するには、ワークスペース直下に `rspec-wasm.config.mjs` を作成します：
+
+```js
+export default {
+  async setup({ vm, workspaceRoot }) {
+    const runtime = await initializeRuntime(workspaceRoot);
+    connectRuntime(vm, runtime);
+  },
+
+  async teardown({ vm, workspaceRoot }) {
+    await disposeRuntime(vm, workspaceRoot);
+  },
+};
+```
+
+処理順は次のとおりです：
+
+```text
+Ruby VM を生成して require hook を登録
+  -> setup({ vm, workspaceRoot }) を await
+  -> RSpec の spec を読み込んで実行
+  -> teardown({ vm, workspaceRoot }) を await
+```
+
+両フックには RSpec が使用するものと同じ Ruby VM が渡されます。`workspaceRoot` は `rspec-wasm` を起動した作業ディレクトリの絶対パスです。`teardown` は RSpec の成功・失敗にかかわらず実行され、`setup` が例外を送出した場合にも実行されます。`setup` が失敗した場合、spec は実行されず、コマンドは非ゼロの終了ステータスで終了します。
+
+`globalThis` に公開した JavaScript 関数は Ruby spec から呼び出せます。RSpec は RubyVM の非同期評価APIで実行されるため、Promiseを返す関数には `await` を使用できます：
+
+```ruby
+require "js"
+
+RSpec.describe "JavaScript runtime" do
+  it "awaits asynchronous work" do
+    result = JS.global[:runtime].call(:calculate, 21).await
+    expect(result.to_i).to eq(42)
+  end
+end
+```
+
+既定では `rspec-wasm.config.mjs` が `rspec-wasm.config.js` より優先され、ES Modules の default export を推奨します。`.js` はプロジェクトの Node.js module type に従うため、CommonJS プロジェクトでは `module.exports` も使用できます。別のファイルを使う場合は、ワークスペースからの相対パス（または絶対パス）を指定します：
+
+```bash
+npx rspec-wasm --config config/rspec-wasm.mjs spec/example_spec.rb
+```
+
+設定ファイルは Node.js プロセス内で任意の JavaScript を実行します。信頼できる設定と依存関係のみを使用してください。
 
 ### Bundler による追加 Gem の導入
 
@@ -181,11 +230,11 @@ npm install
 リポジトリには RSpec のソースを `vendor/gems` 配下に同梱しているため、通常のローカル開発では Ruby のインストールは不要です。同梱内容を再生成または更新する場合は、Ruby をインストールし、`vendor/gems` を空にしてからリポジトリルートで以下を実行します：
 
 ```bash
-gem unpack rspec --version 3.12.0 --target vendor/gems
-gem unpack rspec-core --version 3.12.2 --target vendor/gems
-gem unpack rspec-expectations --version 3.12.3 --target vendor/gems
-gem unpack rspec-mocks --version 3.12.6 --target vendor/gems
-gem unpack rspec-support --version 3.12.1 --target vendor/gems
+gem unpack rspec --version 3.13.2 --target vendor/gems
+gem unpack rspec-core --version 3.13.6 --target vendor/gems
+gem unpack rspec-expectations --version 3.13.5 --target vendor/gems
+gem unpack rspec-mocks --version 3.13.8 --target vendor/gems
+gem unpack rspec-support --version 3.13.7 --target vendor/gems
 npm run verify:bundled-gems
 ```
 

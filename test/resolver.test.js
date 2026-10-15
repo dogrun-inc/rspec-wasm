@@ -75,7 +75,7 @@ test("resolveRubyModule: resolves bundled gems outside the package workspace", (
   );
 
   const resolved = JSON.parse(output);
-  assert.ok(resolved.file_path.includes("vendor/gems/rspec-core-3.12.2"));
+  assert.ok(resolved.file_path.includes("vendor/gems/rspec-core-3.13.6"));
 });
 
 test("resolveRubyModule: resolves gems installed by Bundler", (t) => {

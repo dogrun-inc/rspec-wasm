@@ -9,7 +9,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-417E38?logo=Node.js&logoColor=white)](https://nodejs.org/)
 [![Ruby 4.0](https://img.shields.io/badge/Ruby-4.0-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
 [![ruby.wasm 2.x](https://img.shields.io/badge/ruby.wasm-2.x-654FF0?logo=webassembly&logoColor=white)](https://github.com/ruby/ruby.wasm)
-[![RSpec 3.12](https://img.shields.io/badge/RSpec-3.12-E9573F)](https://rspec.info/)
+[![RSpec 3.13](https://img.shields.io/badge/RSpec-3.13-E9573F)](https://rspec.info/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -80,6 +80,55 @@ npx rspec-wasm --allow-outside-roots spec/calculator_spec.rb
 ```
 
 This option allows Ruby files anywhere on the host filesystem to be loaded and evaluated. Use it only with trusted specs and dependencies.
+
+### JavaScript Setup and Teardown
+
+To initialize a JavaScript runtime before RSpec loads the spec files, create `rspec-wasm.config.mjs` in the workspace root:
+
+```js
+export default {
+  async setup({ vm, workspaceRoot }) {
+    const runtime = await initializeRuntime(workspaceRoot);
+    connectRuntime(vm, runtime);
+  },
+
+  async teardown({ vm, workspaceRoot }) {
+    await disposeRuntime(vm, workspaceRoot);
+  },
+};
+```
+
+The execution order is:
+
+```text
+Create Ruby VM and register require hook
+  -> await setup({ vm, workspaceRoot })
+  -> load and run RSpec specs
+  -> await teardown({ vm, workspaceRoot })
+```
+
+Both hooks receive the same Ruby VM used by RSpec. `workspaceRoot` is the absolute working directory from which `rspec-wasm` was started. `teardown` runs after a passing or failing RSpec run, and also when `setup` throws. If `setup` fails, specs are not started and the command exits with a non-zero status.
+
+JavaScript functions exposed through `globalThis` can be called from Ruby specs. Promise-returning functions can be awaited because RSpec runs through RubyVM's asynchronous evaluation API:
+
+```ruby
+require "js"
+
+RSpec.describe "JavaScript runtime" do
+  it "awaits asynchronous work" do
+    result = JS.global[:runtime].call(:calculate, 21).await
+    expect(result.to_i).to eq(42)
+  end
+end
+```
+
+By default, `rspec-wasm.config.mjs` is preferred over `rspec-wasm.config.js`. ES Modules with a default export are recommended. A `.js` file follows the Node.js module type of its project and may use `module.exports` in a CommonJS project. To select another file, pass a path relative to the workspace root (or an absolute path):
+
+```bash
+npx rspec-wasm --config config/rspec-wasm.mjs spec/example_spec.rb
+```
+
+Configuration files execute arbitrary JavaScript in the Node.js process. Only use trusted configuration and dependencies.
 
 ### Using Additional Gems with Bundler
 
@@ -181,11 +230,11 @@ npm install
 The repository already includes the RSpec sources under `vendor/gems`, so no Ruby installation is needed for normal development. To recreate or update the bundle, install Ruby and run these commands from the repository root after clearing `vendor/gems`:
 
 ```bash
-gem unpack rspec --version 3.12.0 --target vendor/gems
-gem unpack rspec-core --version 3.12.2 --target vendor/gems
-gem unpack rspec-expectations --version 3.12.3 --target vendor/gems
-gem unpack rspec-mocks --version 3.12.6 --target vendor/gems
-gem unpack rspec-support --version 3.12.1 --target vendor/gems
+gem unpack rspec --version 3.13.2 --target vendor/gems
+gem unpack rspec-core --version 3.13.6 --target vendor/gems
+gem unpack rspec-expectations --version 3.13.5 --target vendor/gems
+gem unpack rspec-mocks --version 3.13.8 --target vendor/gems
+gem unpack rspec-support --version 3.13.7 --target vendor/gems
 npm run verify:bundled-gems
 ```
 
