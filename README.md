@@ -9,7 +9,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-417E38?logo=Node.js&logoColor=white)](https://nodejs.org/)
 [![Ruby 4.0](https://img.shields.io/badge/Ruby-4.0-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
 [![ruby.wasm 2.x](https://img.shields.io/badge/ruby.wasm-2.x-654FF0?logo=webassembly&logoColor=white)](https://github.com/ruby/ruby.wasm)
-[![RSpec 3.12](https://img.shields.io/badge/RSpec-3.12-E9573F)](https://rspec.info/)
+[![RSpec 3.13](https://img.shields.io/badge/RSpec-3.13-E9573F)](https://rspec.info/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -230,11 +230,11 @@ npm install
 The repository already includes the RSpec sources under `vendor/gems`, so no Ruby installation is needed for normal development. To recreate or update the bundle, install Ruby and run these commands from the repository root after clearing `vendor/gems`:
 
 ```bash
-gem unpack rspec --version 3.12.0 --target vendor/gems
-gem unpack rspec-core --version 3.12.2 --target vendor/gems
-gem unpack rspec-expectations --version 3.12.3 --target vendor/gems
-gem unpack rspec-mocks --version 3.12.6 --target vendor/gems
-gem unpack rspec-support --version 3.12.1 --target vendor/gems
+gem unpack rspec --version 3.13.2 --target vendor/gems
+gem unpack rspec-core --version 3.13.6 --target vendor/gems
+gem unpack rspec-expectations --version 3.13.5 --target vendor/gems
+gem unpack rspec-mocks --version 3.13.8 --target vendor/gems
+gem unpack rspec-support --version 3.13.7 --target vendor/gems
 npm run verify:bundled-gems
 ```
 
